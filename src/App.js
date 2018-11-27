@@ -3,13 +3,6 @@ import 'bootstrap/dist/css/bootstrap.css';
 import './App.css';
 
 
-
-// var liquidCv = function(inlet, outlet, flow, gravity) {
-//   let cv = flow * Math.sqrt((gravity / (inlet - outlet)));
-//   return cv.toFixed(4);
-// };
-
-
 const pressureUnits = ['psia', 'kpa', 'bar', 'mpa']
 const tempUnits = ['fahrenheit', 'celsius', 'kelvin']
 const flowUnits = [
@@ -24,6 +17,37 @@ const flowUnits = [
   }
 ]
 
+const liquidCv = function(inlet, outlet, flow, gravity) {
+  let cv = flow * Math.sqrt((gravity / (inlet - outlet)));
+  return cv.toFixed(3);
+};
+
+const pressureConvert = function(pressure, unit) {
+  const units = {
+    "kpa":   6.894757,
+    "bar":  14.503773,
+    "mpa": 145.037
+  }
+
+  if (unit === "kpa") {
+    return pressure / units[unit];
+  }
+  return pressure * units[unit];
+}
+
+
+const flowConvert = function(flow, unit) {
+  const units = {
+    lph:  0.004402,
+    lpm:  0.264172,
+    lps: 15.850372,
+    m3hr: 4.402881
+  }
+  return flow * units[unit];
+}
+
+
+
 class CalculatorForm extends React.Component{
   constructor(props) {
     super(props);
@@ -33,23 +57,39 @@ class CalculatorForm extends React.Component{
       inletUnit: 'psia',
       outlet:'',
       outletUnit:'psia',
+      temperature:'',
+      tempUnit:'fahrenheit',
       gravity:'',
       flowRate:'',
       flow:'',
-      cv: '',
+      cv: 'Test',
       flowUnit: 'gpm'
     };
+
     this.handleInput = this.handleInput.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
   }
   handleInput (event) {
     const target = event.target
     const value = target.value
     const name = target.name
 
-    this.setState({
-      [name]:value
-    });
+    this.setState({[name]:value});
   }
+
+  handleSubmit (event) {
+    let inlet = parseFloat(this.state.inlet, 10)
+    const inletUnit = this.state.inletUnit
+    var outlet = parseFloat(this.state.outlet, 10)
+    const outletUnit = this.state.outletUnit
+    let flow = parseFloat(this.state.flowRate, 10)
+    const flowUnit = this.state.flowUnit
+    const gravity = parseFloat(this.state.gravity, 10)
+
+
+    this.setState({cv: liquidCv(inlet, outlet, flow, gravity)})
+  }
+
 
   render() {
 
@@ -64,7 +104,10 @@ class CalculatorForm extends React.Component{
         )
     }
 
+
       return (
+        <div>
+        <h1>{this.state.cv}</h1>
         <form>
           <div class="form-group row">
           <label class="col-2">Medium Type</label>
@@ -100,6 +143,18 @@ class CalculatorForm extends React.Component{
           </div>
 
           <div class="form-group row">
+          <label class="col-2">Temperature</label>
+            <div class="col-5">
+              <input class="form-control" name="temperature" value={this.state.temperature} onChange={this.handleInput}></input>
+            </div>
+              <div class="col-1">
+                <select class="form-control" name="tempUnit" onChange={this.handleInput}>
+                  {tempUnits.map((unit) => <option value={unit}>{unit}</option>)}
+                </select>
+              </div>
+          </div>
+
+          <div class="form-group row">
           <label class="col-2">Specific Gravity</label>
             <div class="col-5">
               <input class="form-control" name="gravity" value={this.state.gravity} onChange={this.handleInput}></input>
@@ -113,8 +168,9 @@ class CalculatorForm extends React.Component{
             </div>
             {getFlowUnits()}
           </div>
-
         </form>
+        <button onClick={this.handleSubmit}>Calculate</button>
+        </div>
         )
     }
 }
