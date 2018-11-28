@@ -13,14 +13,26 @@ const flowUnits = [
 
   {
     name: 'gas',
-    units: ['gpm', 'stdl/min', 'stdm3/hr', 'stdm3/min']
+    units: ['scfm', 'stdl/min', 'stdm3/hr', 'stdm3/min']
   }
 ]
 
 const liquidCv = function(inlet, outlet, flow, gravity) {
   let cv = flow * Math.sqrt((gravity / (inlet - outlet)));
-  return cv;
+  return cv.toFixed(3);
 };
+
+
+const gasCv = function(inlet, outlet, flow, temp, gravity) {
+  if (outlet > inlet / 2) {
+    let delta = inlet - outlet;
+    let cv = flow / (22.67 * inlet * (1 - ((2 * delta) / (3 * inlet))) * Math.sqrt(delta / (inlet * gravity * (temp + 460))))
+    return cv.toFixed(3);
+  } else {
+    let cv = flow / (0.471 * 22.67 * inlet * Math.sqrt(1 / (gravity * (temp + 460))))
+    return cv.toFixed(3);
+  }
+}
 
 const pressureConvert = function(pressure, unit) {
   const units = {
@@ -49,6 +61,16 @@ const flowConvert = function(flow, unit) {
   return result.toFixed(3);
 }
 
+const temperatureConvert = function(temperature, unit) {
+  const convertC = (temp) => {return temp * 1.8 + 32}
+  const convertK = (temp) => {return (temp - 273.15) * 1.8 + 32}
+
+  const units = {
+    celsius: convertC(temperature).toFixed(3),
+    kelvin: convertK(temperature).toFixed(3)
+  }
+  return parseFloat(units[unit])
+}
 
 
 class CalculatorForm extends React.Component{
@@ -65,7 +87,7 @@ class CalculatorForm extends React.Component{
       gravity:'',
       flowRate:'',
       flow:'',
-      cv: 'Test',
+      cv: '',
       flowUnit: 'gpm'
     };
 
@@ -88,6 +110,9 @@ class CalculatorForm extends React.Component{
     let flow = parseFloat(this.state.flowRate, 10)
     const flowUnit = this.state.flowUnit
     const gravity = parseFloat(this.state.gravity, 10)
+    let temperature = parseFloat(this.state.temperature, 10)
+    const tempUnit = this.state.tempUnit
+    const mediumType = this.state.mediumType
 
 
     if (inletUnit !== "psia") {
@@ -102,8 +127,19 @@ class CalculatorForm extends React.Component{
       flow = flowConvert(flow, flowUnit)
     }
 
-    // Must add validation to prevent oulet from being higher than inlet
-    this.setState({cv: liquidCv(inlet, outlet, flow, gravity)})
+    if (tempUnit !== "fahrenheit") {
+      temperature = temperatureConvert(temperature, tempUnit)
+    }
+
+    if (outlet > inlet) {
+      alert("inlet pressure must be greater than outlet pressure")
+    }
+
+    if (mediumType === "gas") {
+      this.setState({cv: gasCv(inlet, outlet, flow, temperature, gravity)})
+    } else {
+      this.setState({cv: liquidCv(inlet, outlet, flow, gravity)})
+    }
   }
 
 
@@ -113,13 +149,12 @@ class CalculatorForm extends React.Component{
       const mediumUnits = flowUnits.filter(({name}) => name === this.state.mediumType)[0]
       return (
         <div class="col-1">
-          <select class="form-control" name="flowUnit" onChange={this.handleInput}>
+          <select class="form-control" name="mediumType" onChange={this.handleInput}>
             {mediumUnits.units.map(unit => <option>{unit}</option>)}
           </select>
         </div>
         )
     }
-
 
       return (
         <div>
