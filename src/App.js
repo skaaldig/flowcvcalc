@@ -19,31 +19,34 @@ const flowUnits = [
 
 const liquidCv = function(inlet, outlet, flow, gravity) {
   let cv = flow * Math.sqrt((gravity / (inlet - outlet)));
-  return cv.toFixed(3);
+  return cv;
 };
 
 const pressureConvert = function(pressure, unit) {
   const units = {
-    "kpa":   6.894757,
-    "bar":  14.503773,
+    "kpa":   6.895,
+    "bar":  14.504,
     "mpa": 145.037
   }
 
   if (unit === "kpa") {
-    return pressure / units[unit];
+    const result = pressure / units[unit];
+    return result.toFixed(3);
   }
-  return pressure * units[unit];
+  const result = pressure * units[unit];
+  return result.toFixed(3);
 }
 
 
 const flowConvert = function(flow, unit) {
   const units = {
-    lph:  0.004402,
-    lpm:  0.264172,
-    lps: 15.850372,
-    m3hr: 4.402881
+    lph:  0.004,
+    lpm:  0.264,
+    lps: 15.850,
+    m3hr: 4.403
   }
-  return flow * units[unit];
+  const result = flow * units[unit];
+  return result.toFixed(3);
 }
 
 
@@ -87,6 +90,19 @@ class CalculatorForm extends React.Component{
     const gravity = parseFloat(this.state.gravity, 10)
 
 
+    if (inletUnit !== "psia") {
+      inlet = pressureConvert(inlet, inletUnit)
+    }
+
+    if (outletUnit !== "psia") {
+      outlet = pressureConvert(outlet, outletUnit)
+    }
+
+    if (flowUnit !== "gpm") {
+      flow = flowConvert(flow, flowUnit)
+    }
+
+    // Must add validation to prevent oulet from being higher than inlet
     this.setState({cv: liquidCv(inlet, outlet, flow, gravity)})
   }
 
@@ -107,7 +123,6 @@ class CalculatorForm extends React.Component{
 
       return (
         <div>
-        <h1>{this.state.cv}</h1>
         <form>
           <div class="form-group row">
           <label class="col-2">Medium Type</label>
@@ -170,6 +185,7 @@ class CalculatorForm extends React.Component{
           </div>
         </form>
         <button onClick={this.handleSubmit}>Calculate</button>
+        <h1>{this.state.cv}</h1>
         </div>
         )
     }
