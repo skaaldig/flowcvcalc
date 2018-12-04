@@ -36,15 +36,15 @@ const gasCv = function(inlet, outlet, flow, temp, gravity) {
 }
 
 const liquidFlow = function(inlet, outlet, gravity, cv) {
-    let flow = cv * Math.sqrt((inlet - outlet) / gravity)
-    return flow.toFixed(3);
+  let flow = cv * Math.sqrt((inlet - outlet) / gravity)
+  return flow.toFixed(3);
   }
 
-  const gasFlow = function(inlet, outlet, temp, gravity, cv) {
-    if (outlet > inlet / 2) {
-        let delta = inlet - outlet
-        const flow = cv * 22.67 * inlet * (1 - ((2 * delta) / (3 * inlet))) * Math.sqrt(delta / (inlet * gravity * (temp + 460)))
-        return flow.toFixed(3);
+const gasFlow = function(inlet, outlet, temp, gravity, cv) {
+  if (outlet > inlet / 2) {
+    let delta = inlet - outlet
+    const flow = cv * 22.67 * inlet * (1 - ((2 * delta) / (3 * inlet))) * Math.sqrt(delta / (inlet * gravity * (temp + 460)))
+    return flow.toFixed(3);
   }
     const flow = cv * (22.67 * inlet * 0.471 * Math.sqrt(1 / (gravity * (temp + 460))))
     return flow.toFixed(3);
@@ -84,7 +84,7 @@ const flowConvert = function(flow, unit) {
 }
 
 const temperatureConvert = function(temperature, unit) {
-  if (unit ==="f") {
+  if (unit ==="fahrenheit") {
     return temperature
   }
   const convertC = (temp) => {return temp * 1.8 + 32}
@@ -100,7 +100,7 @@ const temperatureConvert = function(temperature, unit) {
 
 const performCvCalc = function(context) {
   if (context.mediumType === 'gas') {
-    return gasCv(context.inlet, context.outlet, context.flow, context.temp, context.gravity);
+    return gasCv(context.inlet, context.outlet, context.flow, context.temp, context.gravity)
   }
   return liquidCv(context.inlet, context.outlet, context.flow, context.gravity)
 }
@@ -158,13 +158,12 @@ class CalculatorForm extends React.Component{
     const formContext = {
       inlet: pressureConvert(inlet, inletUnit),
       outlet: pressureConvert(outlet, outletUnit),
-      flow:flowConvert(flow, flowUnit),
-      temperature:temperatureConvert(temperature, tempUnit),
+      flow: flowConvert(flow, flowUnit),
+      temp: temperatureConvert(temperature, tempUnit),
       gravity: gravity,
       mediumType: mediumType,
       cv: cv
     }
-
 
     if (formContext.outlet > formContext.inlet) {
       alert("inlet pressure must be greater than outlet pressure")
@@ -188,14 +187,6 @@ class CalculatorForm extends React.Component{
             </div>
           </div>
           );
-       return (
-            <div className="form-group row">
-            <label className="col-2">Flow Rate</label>
-            <div className="col-5">
-              <input className="form-control" name="flowRate" value={this.state.flowRate} onChange={this.handleInput}></input>
-            </div>
-          </div>
-       )
       }
 
       return (
