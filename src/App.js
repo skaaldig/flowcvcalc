@@ -4,6 +4,7 @@ import './App.css';
 
 
 const pressureUnits = ['psia', 'kpa', 'bar', 'mpa']
+const calcTypes = ['cv', 'flow']
 const tempUnits = ['fahrenheit', 'celsius', 'kelvin']
 const flowUnits = [
   {
@@ -41,7 +42,10 @@ const pressureConvert = function(pressure, unit) {
     "mpa": 145.037
   }
 
-  if (unit === "kpa") {
+  if (unit === "psia") {
+    return pressure
+  }
+  else if (unit === "kpa") {
     const result = pressure / units[unit];
     return result.toFixed(3);
   }
@@ -57,11 +61,17 @@ const flowConvert = function(flow, unit) {
     lps: 15.850,
     m3hr: 4.403
   }
-  const result = flow * units[unit];
+  if (unit === "gpm") {
+    return flow
+  }
+  let result = flow * units[unit];
   return result.toFixed(3);
 }
 
 const temperatureConvert = function(temperature, unit) {
+  if (unit ==="f") {
+    return temperature
+  }
   const convertC = (temp) => {return temp * 1.8 + 32}
   const convertK = (temp) => {return (temp - 273.15) * 1.8 + 32}
 
@@ -88,7 +98,8 @@ class CalculatorForm extends React.Component{
       flowRate:'',
       flow:'',
       cv: '',
-      flowUnit: 'gpm'
+      flowUnit: 'gpm',
+      calcType: 'cv'
     };
 
     this.handleInput = this.handleInput.bind(this)
@@ -114,26 +125,16 @@ class CalculatorForm extends React.Component{
     const tempUnit = this.state.tempUnit
     const mediumType = this.state.mediumType
 
-
-    if (inletUnit !== "psia") {
-      inlet = pressureConvert(inlet, inletUnit)
-    }
-
-    if (outletUnit !== "psia") {
-      outlet = pressureConvert(outlet, outletUnit)
-    }
-
-    if (flowUnit !== "gpm") {
-      flow = flowConvert(flow, flowUnit)
-    }
-
-    if (tempUnit !== "fahrenheit") {
-      temperature = temperatureConvert(temperature, tempUnit)
-    }
+    inlet = pressureConvert(inlet, inletUnit)
+    outlet = pressureConvert(outlet, outletUnit)
+    flow = flowConvert(flow, flowUnit)
+    temperature = temperatureConvert(temperature, tempUnit)
 
     if (outlet > inlet) {
       alert("inlet pressure must be greater than outlet pressure")
     }
+
+    // implement flow calculation.
 
     if (mediumType === "gas") {
       this.setState({cv: gasCv(inlet, outlet, flow, temperature, gravity)})
@@ -144,83 +145,118 @@ class CalculatorForm extends React.Component{
 
 
   render() {
+    const getCalcType = () => {
+      if (this.state.calcType === 'flow') {
+        return (
+          <div className="form-group row">
+            <label className="col-2">CV</label>
+            <div className="col-5">
+              <input className="form-control" name="cv" value={this.state.cv} onChange={this.handleInput}></input>
+            </div>
+          </div>
+          );
+      }
+
+      return (
+          <div className="form-group row">
+          <label className="col-2">Flow Rate</label>
+            <div className="col-2">
+              <input className="form-control" name="flowRate" value={this.state.flowRate} onChange={this.handleInput}></input>
+            </div>
+            {getFlowUnits()}
+          </div>
+        );
+    }
 
     const getFlowUnits = () => {
       const mediumUnits = flowUnits.filter(({name}) => name === this.state.mediumType)[0]
       return (
-        <div class="col-1">
-          <select class="form-control" name="mediumType" onChange={this.handleInput}>
+        <div className="col-1">
+          <select className="form-control" name="mediumType" onChange={this.handleInput}>
             {mediumUnits.units.map(unit => <option>{unit}</option>)}
           </select>
         </div>
         )
     }
 
+    const getResult = () => {
+      if (this.state.calcType === 'flow') {
+        return this.state.flow
+      }
+      return this.state.cv
+    }
+
       return (
         <div>
         <form>
-          <div class="form-group row">
-          <label class="col-2">Medium Type</label>
-            <div class="col-5">
-              <select class="form-control" name="mediumType" onChange={this.handleInput}>
+          <div className="form-group row">
+          <label className="col-2">Calculation Type</label>
+            <div className="col-5">
+              <select className="form-control" name="calcType" onChange={this.handleInput}>
+                {calcTypes.map((calc) => <option value={calc}>{calc}</option>)}
+                }
+              </select>
+            </div>
+          </div>
+
+
+          <div className="form-group row">
+          <label className="col-2">Medium Type</label>
+            <div className="col-5">
+              <select className="form-control" name="mediumType" onChange={this.handleInput}>
                 {flowUnits.map(({name}) => <option value={name}>{name}</option>)}
               </select>
             </div>
           </div>
 
-          <div class="form-group row">
-          <label class="col-2">Inlet Pressure</label>
-            <div class="col-5">
-              <input class="form-control" name="inlet" value={this.state.inlet} onChange={this.handleInput}></input>
+          <div className="form-group row">
+          <label className="col-2">Inlet Pressure</label>
+            <div className="col-5">
+              <input className="form-control" name="inlet" value={this.state.inlet} onChange={this.handleInput}></input>
             </div>
-              <div class="col-1">
-                <select class="form-control" name="inletUnit" onChange={this.handleInput}>
+              <div className="col-1">
+                <select className="form-control" name="inletUnit" onChange={this.handleInput}>
                   {pressureUnits.map(unit => <option value={unit}>{unit}</option>)}
                 </select>
               </div>
           </div>
 
-          <div class="form-group row">
-          <label class="col-2">Outlet Pressure</label>
-            <div class="col-5">
-              <input class="form-control" name="outlet" value={this.state.outlet} onChange={this.handleInput}></input>
+          <div className="form-group row">
+          <label className="col-2">Outlet Pressure</label>
+            <div className="col-5">
+              <input className="form-control" name="outlet" value={this.state.outlet} onChange={this.handleInput}></input>
             </div>
-              <div class="col-1">
-                <select class="form-control" name="outletUnit" onChange={this.handleInput}>
+              <div className="col-1">
+                <select className="form-control" name="outletUnit" onChange={this.handleInput}>
                   {pressureUnits.map((unit) => <option value={unit}>{unit}</option>)}
                 </select>
               </div>
           </div>
 
-          <div class="form-group row">
-          <label class="col-2">Temperature</label>
-            <div class="col-5">
-              <input class="form-control" name="temperature" value={this.state.temperature} onChange={this.handleInput}></input>
+          <div className="form-group row">
+          <label className="col-2">Temperature</label>
+            <div className="col-5">
+              <input className="form-control" name="temperature" value={this.state.temperature} onChange={this.handleInput}></input>
             </div>
-              <div class="col-1">
-                <select class="form-control" name="tempUnit" onChange={this.handleInput}>
+              <div className="col-1">
+                <select className="form-control" name="tempUnit" onChange={this.handleInput}>
                   {tempUnits.map((unit) => <option value={unit}>{unit}</option>)}
                 </select>
               </div>
           </div>
 
-          <div class="form-group row">
-          <label class="col-2">Specific Gravity</label>
-            <div class="col-5">
-              <input class="form-control" name="gravity" value={this.state.gravity} onChange={this.handleInput}></input>
+          <div className="form-group row">
+          <label className="col-2">Specific Gravity</label>
+            <div className="col-5">
+              <input className="form-control" name="gravity" value={this.state.gravity} onChange={this.handleInput}></input>
             </div>
           </div>
 
-          <div class="form-group row">
-          <label class="col-2">Flow Rate</label>
-            <div class="col-2">
-              <input class="form-control" name="flowRate" value={this.state.flowRate} onChange={this.handleInput}></input>
-            </div>
-            {getFlowUnits()}
-          </div>
+          {getCalcType()}
+
         </form>
         <button onClick={this.handleSubmit}>Calculate</button>
-        <h1>{this.state.cv}</h1>
+        <h1>{getResult()}</h1>
         </div>
         )
     }
